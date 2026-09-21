@@ -8,7 +8,12 @@ import {
   LineChart, 
   Send, 
   Info,
-  ServerCrash
+  ServerCrash,
+  Download,
+  Activity,
+  Layers,
+  CheckCircle2,
+  ChevronRight
 } from 'lucide-react';
 
 // Import Pages
@@ -92,7 +97,6 @@ export default function App() {
   const handlePreprocessComplete = (prepData) => {
     setPreprocessState(prepData);
     setIsPreprocessed(true);
-    // reload stats (e.g. categories count, shapes etc)
     checkBackendStatus();
   };
 
@@ -102,23 +106,47 @@ export default function App() {
     checkBackendStatus();
   };
 
-  // Sidebar Menu Items
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'dataset', label: 'Dataset Management', icon: Database },
-    { id: 'preprocessing', label: 'Data Preprocessing', icon: Settings },
-    { id: 'eda', label: 'Exploratory Analysis', icon: BarChart4 },
-    { id: 'training', label: 'Model Training', icon: Cpu },
-    { id: 'evaluation', label: 'Model Evaluation', icon: LineChart },
-    { id: 'prediction', label: 'Ensemble Prediction', icon: Send },
-    { id: 'modelinfo', label: 'Model Reference', icon: Info },
+  // Grouped Menu Sections
+  const menuSections = [
+    {
+      title: "Data Platform",
+      items: [
+        { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
+        { id: 'dataset', label: 'Dataset Ingestion', icon: Database },
+        { id: 'preprocessing', label: '8-Stage Pipeline', icon: Settings },
+        { id: 'eda', label: 'Exploratory Analytics', icon: BarChart4 },
+      ]
+    },
+    {
+      title: "Machine Learning",
+      items: [
+        { id: 'training', label: 'Model Training Studio', icon: Cpu },
+        { id: 'evaluation', label: 'Validation & Weights', icon: LineChart },
+        { id: 'prediction', label: 'Operational Predictor', icon: Send },
+      ]
+    },
+    {
+      title: "System Reference",
+      items: [
+        { id: 'modelinfo', label: 'Model Architecture', icon: Info },
+      ]
+    }
   ];
+
+  // Helper to find active tab title
+  const getActiveTabTitle = () => {
+    for (const sec of menuSections) {
+      const match = sec.items.find(i => i.id === activeTab);
+      if (match) return match.label;
+    }
+    return 'Dashboard';
+  };
 
   if (loading) {
     return (
       <div className="loading-container" style={{ minHeight: '100vh', justifyContent: 'center' }}>
         <div className="loading-spinner"></div>
-        <p style={{ color: 'var(--text-secondary)' }}>Initializing Food Demand Forecasting System...</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Connecting to OptiFlow Enterprise Kernel...</p>
       </div>
     );
   }
@@ -129,106 +157,153 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo-container">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
           </div>
-          <div className="sidebar-title">
-            OptiFlow
-            <div style={{ fontSize: '10px', fontWeight: '500', color: 'var(--text-secondary)' }}>Demand Planner</div>
+          <div>
+            <div className="sidebar-title">OptiFlow ML</div>
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '600' }}>Enterprise Demand v2.4</div>
           </div>
         </div>
 
-        <nav style={{ flexGrow: 1 }}>
-          <ul className="sidebar-menu">
-            {menuItems.map(item => {
-              const Icon = item.icon;
-              return (
-                <li key={item.id}>
-                  <button 
-                    onClick={() => setActiveTab(item.id)} 
-                    className={`sidebar-item ${activeTab === item.id ? 'active' : ''}`}
-                    style={{ width: '100%', background: 'none', border: 'none', textAlign: 'left' }}
-                  >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+        <nav style={{ flexGrow: 1, overflowY: 'auto' }}>
+          {menuSections.map((sec, idx) => (
+            <div key={idx} style={{ marginBottom: '12px' }}>
+              <div className="sidebar-section-title">{sec.title}</div>
+              <ul className="sidebar-menu">
+                {sec.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <li key={item.id}>
+                      <button 
+                        onClick={() => setActiveTab(item.id)} 
+                        className={`sidebar-item ${isActive ? 'active' : ''}`}
+                        style={{ width: '100%', background: 'none', textAlign: 'left' }}
+                      >
+                        <Icon size={16} />
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">
-          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>OptiFlow Systems</div>
-          <div style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>v1.2.0 (Active)</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span style={{ fontWeight: '650', color: 'var(--text-primary)' }}>Kernel Node</span>
+            <span className="badge badge-success">Port 8000</span>
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
+            FastAPI 0.110 · Python 3.12
+          </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="main-content">
-        {!backendConnected && (
-          <div className="alert alert-warning" style={{ backgroundColor: 'rgba(239,68,68,0.1)', borderColor: 'var(--accent-red)', color: '#fca5a5', marginBottom: '24px' }}>
-            <ServerCrash size={18} style={{ flexShrink: 0 }} />
-            <div>
-              <strong>Backend Connection Offline:</strong> Cannot reach the FastAPI server at <code>http://localhost:8000</code>.
-              <br />
-              <span style={{ fontSize: '12px' }}>Please make sure you launch the backend by running the FastAPI server. It is required to process the CSV datasets, train models, and generate predictions.</span>
-            </div>
+      {/* Main Content Wrapper with Enterprise Topbar */}
+      <div className="main-wrapper">
+        <header className="top-navbar">
+          <div className="breadcrumbs">
+            <span className="breadcrumb-root">OptiFlow Core</span>
+            <ChevronRight size={13} className="breadcrumb-separator" />
+            <span style={{ color: 'var(--text-muted)' }}>Supply Forecasting</span>
+            <ChevronRight size={13} className="breadcrumb-separator" />
+            <span style={{ fontWeight: '600', color: '#0f172a' }}>{getActiveTabTitle()}</span>
           </div>
-        )}
 
-        {/* Tab Switching */}
-        {activeTab === 'dashboard' && (
-          <Dashboard 
-            stats={stats} 
-            metrics={metrics} 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-          />
-        )}
+          <div className="top-navbar-actions">
+            <div className="status-pill">
+              <span className={`status-indicator ${backendConnected ? 'online' : 'training'}`}></span>
+              <span>{backendConnected ? 'Backend Connected' : 'Connecting...'}</span>
+            </div>
 
-        {activeTab === 'dataset' && (
-          <DatasetManagement stats={stats} />
-        )}
+            <div className="status-pill" style={{ display: 'none', mdDisplay: 'flex' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Ingested:</span>
+              <span style={{ fontWeight: '700' }}>{stats?.train_rows?.toLocaleString() || '456,548'}</span>
+            </div>
 
-        {activeTab === 'preprocessing' && (
-          <DataPreprocessing 
-            stats={stats}
-            preprocessState={preprocessState}
-            onPreprocessComplete={handlePreprocessComplete}
-          />
-        )}
+            <a 
+              href="http://localhost:8000/api/preprocess/download" 
+              download
+              className="btn btn-secondary"
+              style={{ fontSize: '11.5px', padding: '6px 12px', textDecoration: 'none' }}
+              title="Download preprocessed engineered dataset as CSV"
+            >
+              <Download size={13} />
+              <span>Export CSV</span>
+            </a>
+          </div>
+        </header>
 
-        {activeTab === 'eda' && (
-          <EDA />
-        )}
+        {/* Main Content Area */}
+        <main className="main-content">
+          {!backendConnected && (
+            <div className="alert alert-warning" style={{ backgroundColor: '#fff1f2', borderColor: '#fecdd3', color: '#9f1239', marginBottom: '20px' }}>
+              <ServerCrash size={18} style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Backend Connection Offline:</strong> Cannot reach the FastAPI server at <code>http://localhost:8000</code>.
+                <br />
+                <span style={{ fontSize: '11.5px' }}>Ensure the backend server is running in your terminal (<code>uvicorn main:app --reload</code>).</span>
+              </div>
+            </div>
+          )}
 
-        {activeTab === 'training' && (
-          <ModelTraining 
-            isPreprocessed={isPreprocessed}
-            isTrained={isTrained}
-            onTrainingComplete={handleTrainingComplete}
-          />
-        )}
+          {/* Tab Switching */}
+          {activeTab === 'dashboard' && (
+            <Dashboard 
+              stats={stats} 
+              metrics={metrics} 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+            />
+          )}
 
-        {activeTab === 'evaluation' && (
-          <ModelEvaluation 
-            metrics={metrics} 
-            weights={weights} 
-          />
-        )}
+          {activeTab === 'dataset' && (
+            <DatasetManagement stats={stats} />
+          )}
 
-        {activeTab === 'prediction' && (
-          <Prediction isTrained={isTrained} />
-        )}
+          {activeTab === 'preprocessing' && (
+            <DataPreprocessing 
+              stats={stats}
+              preprocessState={preprocessState}
+              onPreprocessComplete={handlePreprocessComplete}
+            />
+          )}
 
-        {activeTab === 'modelinfo' && (
-          <ModelInfo />
-        )}
-      </main>
+          {activeTab === 'eda' && (
+            <EDA />
+          )}
+
+          {activeTab === 'training' && (
+            <ModelTraining 
+              isPreprocessed={isPreprocessed}
+              isTrained={isTrained}
+              onTrainingComplete={handleTrainingComplete}
+            />
+          )}
+
+          {activeTab === 'evaluation' && (
+            <ModelEvaluation 
+              metrics={metrics} 
+              weights={weights} 
+            />
+          )}
+
+          {activeTab === 'prediction' && (
+            <Prediction isTrained={isTrained} />
+          )}
+
+          {activeTab === 'modelinfo' && (
+            <ModelInfo />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
