@@ -106,14 +106,21 @@ def get_training_status():
 
 @router.get("/evaluation")
 def get_evaluation():
-    """Returns validation metrics (MAE, RMSE, R²) and calculated ensemble weights."""
+    """Returns validation metrics (MAE, RMSE, R²), calculated ensemble weights, and feature importances."""
     if not state["is_trained"] or state["metrics"] is None:
         raise HTTPException(status_code=400, detail="Models have not been trained yet!")
+
+    feat_importances = state.get("feature_importances") or []
+    if not feat_importances and state["models"] is not None:
+        feat_names = getattr(state["pipeline"], "feature_names", None)
+        feat_importances = state["models"].get_feature_importances(feat_names)
+        state["feature_importances"] = feat_importances
 
     return {
         "success": True,
         "metrics": state["metrics"],
-        "weights": state["weights"]
+        "weights": state["weights"],
+        "feature_importances": feat_importances
     }
 
 @router.post("/predict")

@@ -163,6 +163,27 @@ class FoodDemandModels:
             "weights": self.weights
         }
 
+    def get_feature_importances(self, feature_names=None):
+        """
+        Extracts feature importances from the trained Random Forest regressor.
+        Returns a sorted list of dictionaries with feature name and importance percentage.
+        """
+        if self.rf_model is None or not hasattr(self.rf_model, "feature_importances_"):
+            return []
+            
+        importances = self.rf_model.feature_importances_
+        if feature_names is not None and len(feature_names) == len(importances):
+            names = feature_names
+        else:
+            names = [f"Feature {i}" for i in range(len(importances))]
+            
+        feat_list = [
+            {"feature": str(name), "importance": round(float(imp) * 100, 2)}
+            for name, imp in zip(names, importances)
+        ]
+        feat_list.sort(key=lambda x: x["importance"], reverse=True)
+        return feat_list
+
     def save(self, directory):
         """
         Saves all models and weights metadata.

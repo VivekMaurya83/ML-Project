@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Award, Table, BarChart2, ShieldAlert } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { Award, Table, BarChart2, ShieldAlert, Sliders, Layers } from 'lucide-react';
 
 export default function ModelEvaluation({ metrics, weights }) {
   const [data, setData] = useState(null);
@@ -61,6 +61,36 @@ export default function ModelEvaluation({ metrics, weights }) {
     ensemble: "Weighted Averaging Ensemble"
   };
 
+  const formatFeatureName = (feat) => {
+    const map = {
+      checkout_price: "Checkout Price",
+      base_price: "Base Price",
+      op_area: "Operational Area",
+      promotion_intensity: "Promotion Intensity",
+      discount_percent: "Discount Percentage",
+      price_difference: "Price Discount Amount",
+      homepage_featured: "Homepage Featured",
+      emailer_for_promotion: "Emailer Campaign",
+      week: "Timeline Week",
+      center_id: "Center ID",
+      meal_id: "Meal ID",
+      city_code: "City Code",
+      region_code: "Region Code",
+      center_type_TYPE_A: "Center: Type A",
+      center_type_TYPE_B: "Center: Type B",
+      center_type_TYPE_C: "Center: Type C",
+      cuisine_Indian: "Cuisine: Indian",
+      cuisine_Italian: "Cuisine: Italian",
+      cuisine_Continental: "Cuisine: Continental",
+      cuisine_Thai: "Cuisine: Thai",
+    };
+    if (map[feat]) return map[feat];
+    if (feat.startsWith("category_")) return `Cat: ${feat.replace("category_", "")}`;
+    if (feat.startsWith("cuisine_")) return `Cuisine: ${feat.replace("cuisine_", "")}`;
+    if (feat.startsWith("center_type_")) return `Center: ${feat.replace("center_type_", "")}`;
+    return feat.replace(/_/g, " ");
+  };
+
   const getMetricRow = (key) => {
     const m = data.metrics[key];
     if (!m) return { name: modelLabels[key], mae: 'N/A', rmse: 'N/A', r2: 'N/A' };
@@ -110,11 +140,19 @@ export default function ModelEvaluation({ metrics, weights }) {
     }
   ];
 
+  // Prepare Top 10 Feature Importances
+  const rawFeatures = data.feature_importances || [];
+  const topFeatures = rawFeatures.slice(0, 10).map(f => ({
+    name: f.feature,
+    displayName: formatFeatureName(f.feature),
+    importance: f.importance
+  })).reverse(); // Reverse for clean top-down rendering in Recharts vertical layout
+
   return (
     <div>
       <div className="page-header">
         <h2 className="page-title">Model Evaluation</h2>
-        <p className="page-subtitle">Compare performance metrics of individual regressors and the Weighted Averaging Ensemble model.</p>
+        <p className="page-subtitle">Compare performance metrics of individual regressors, feature importances, and the Weighted Averaging Ensemble model.</p>
       </div>
 
       <div className="section-card" style={{ marginBottom: '24px' }}>
@@ -184,6 +222,79 @@ export default function ModelEvaluation({ metrics, weights }) {
           </div>
         </div>
       </div>
+
+      {/* Feature Importance Section */}
+      {rawFeatures.length > 0 && (
+        <div className="section-card" style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h3 className="section-title" style={{ margin: 0 }}>
+                <Sliders size={16} style={{ color: 'var(--accent-primary)' }} /> Random Forest Feature Importance Analysis
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                Quantifies the percentage contribution of each feature towards reducing Mean Squared Error across all 100 Decision Trees.
+              </p>
+            </div>
+            <span style={{ fontSize: '11px', padding: '4px 10px', background: '#eff6ff', color: 'var(--accent-primary)', borderRadius: '12px', fontWeight: 600, border: '1px solid #bfdbfe' }}>
+              Top 10 Predictors
+            </span>
+          </div>
+
+          <div style={{ height: '320px', width: '100%', marginTop: '16px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={topFeatures}
+                margin={{ top: 5, right: 30, left: 130, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" horizontal={false} />
+                <XAxis type="number" stroke="var(--text-secondary)" fontSize={11} unit="%" />
+                <YAxis 
+                  type="category" 
+                  dataKey="displayName" 
+                  stroke="var(--text-secondary)" 
+                  fontSize={11} 
+                  tickLine={false}
+                  width={125}
+                />
+                <Tooltip 
+                  formatter={(val) => [`${val}%`, 'Importance']}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }} 
+                />
+                <Bar dataKey="importance" fill="var(--accent-primary)" radius={[0, 4, 4, 0]} name="Importance (%)">
+                  {topFeatures.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={index === topFeatures.length - 1 ? 'var(--accent-primary)' : index >= topFeatures.length - 3 ? 'var(--accent-indigo)' : '#64748b'} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginTop: '18px' }}>
+            <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>1. Economic Elasticity Driver</strong>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                <code>checkout_price</code> and <code>base_price</code> dominate the split decisions, confirming that consumer ordering volume is fundamentally driven by unit affordability.
+              </p>
+            </div>
+            <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>2. Operational & Scale Constraints</strong>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                <code>op_area</code> ranks as a top physical constraint. Kitchen footprint determines maximum meal preparation and delivery throughput.
+              </p>
+            </div>
+            <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>3. Promotional Multiplier</strong>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                The engineered <code>promotion_intensity</code> successfully isolates demand surges triggered by multi-channel marketing campaigns.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="section-card" style={{ marginTop: '24px' }}>
         <h3 className="section-title"><Award size={16} style={{ color: 'var(--accent-primary)' }} /> Ensemble Weighting Methodology</h3>

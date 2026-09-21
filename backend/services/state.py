@@ -22,6 +22,7 @@ state = {
     "models": None,
     "metrics": None,
     "weights": None,
+    "feature_importances": [],
     "eda_cache": {},
     "stats": {}
 }
@@ -65,6 +66,8 @@ def try_load_saved_artifacts():
             state["models"] = FoodDemandModels.load(SAVED_MODELS_DIR)
             state["metrics"] = state["models"].metrics
             state["weights"] = state["models"].weights
+            feat_names = getattr(state["pipeline"], "feature_names", None)
+            state["feature_importances"] = state["models"].get_feature_importances(feat_names)
             state["is_trained"] = True
             state["training_status"] = "completed"
             print("Successfully loaded saved ML models and preprocessors from disk.")

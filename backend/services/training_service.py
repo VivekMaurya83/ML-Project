@@ -31,6 +31,8 @@ def run_training_in_background(X_train, y_train, X_val, y_val):
         state["models"] = models
         state["metrics"] = metrics
         state["weights"] = weights
+        feat_names = getattr(state["pipeline"], "feature_names", None)
+        state["feature_importances"] = models.get_feature_importances(feat_names)
         state["is_trained"] = True
         state["training_status"] = "completed"
         state["training_logs"].append("Training completed successfully!")
